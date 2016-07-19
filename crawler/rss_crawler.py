@@ -11,9 +11,9 @@ Date: 2016/03/24 13:20:46
 import argparse
 import logging
 import leveldb
+import time
 import socket
 import ConfigParser
-
 import feedparser
 
 
@@ -39,6 +39,14 @@ class RSSCrawler(object):
         doc_list = []
         if 'entries' not in rss_doc:
             return doc_list
+       
+        rss_state = {}
+        if rss in self.__state:
+            rss_state = self.__state[rss]
+
+        latest_updatetime = 0
+        if 'latest_updatetime' in rss_state:
+            latest_updatetime = rss_state['latest_updatetime']
         
         for entry in rss_doc.entries:
             doc = {}
