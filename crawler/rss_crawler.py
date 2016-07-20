@@ -10,11 +10,14 @@ Date: 2016/03/24 13:20:46
 import argparse
 import logging
 import leveldb
+import uuid
 import time
 import socket
 import ConfigParser
 import feedparser
 
+from minidb import MiniDB
+from linkcache import LinkCache
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
@@ -31,7 +34,7 @@ class RSSCrawler(object):
     def __init__(self):
         self.__state = {}
 
-    def crawl(self, rss):
+    def crawl(self, rss, lastupdate):
         """
         Crawl rss page
         """
@@ -46,13 +49,13 @@ class RSSCrawler(object):
         if rss in self.__state:
             rss_state = self.__state[rss]
 
-        latest_updatetime = 0
+        latest_updatetime = lastupdate
         if 'latest_updatetime' in rss_state:
             latest_updatetime = rss_state['latest_updatetime']
         
         cur_latest = latest_updatetime
         for entry in rss_doc.entries:
-            timestamp = time.mktime(entry.published_parsed)
+            timestamp = int(time.mktime(entry.published_parsed))
             if timestamp <= latest_updatetime:
                 continue
             
@@ -61,7 +64,8 @@ class RSSCrawler(object):
 
             doc_attr = entry.keys()
             doc = {}
-            
+           
+            doc['link'] = rss 
             if 'title' in doc_attr:
                 doc['title'] = entry.title
             if 'summary' in doc_attr:
@@ -71,16 +75,9 @@ class RSSCrawler(object):
             if 'tags' in doc_attr:
                 doc['tags'] = entry.tags
             doc['timestamp'] = timestamp
-            doc_list.apppend(doc)
+            doc_list.append(doc)
         latest_updatetime = cur_latest
         return doc_list, url_list
-
-
-def dump_docs(doc_list):
-    """
-    dump docs to local db
-    """
-    print doc_list
 
 
 def main():
@@ -111,11 +108,18 @@ def main():
         return
 
     crawler = RSSCrawler()
+    db = MiniDB(args.db)
+    linkcache = LinkCache(config)
 
     for rss in rss_list:
-        doc_list, url_list = crawler.crawl(rss)
-        if len(doc_list) > 0:
-            dump_docs(doc_list)
+        timestamp = linkcache.get_link_updatetime(rss)
+        doc_list, url_list = crawler.crawl(rss, timestamp)
+        for doc in doc_list:
+            db.set(str(uuid.uuid1()), doc)
+            if doc['timestamp'] > timestamp:
+                timestamp = doc['timestamp']
+        linkcache.set_link_updatetime(rss, doc['timestamp'])
+        logging.info('rss=[%s] doc_num=[%d] timestamp=[%d]' % (rss, len(doc_list), timestamp))
 
 
 if __name__ == "__main__":
