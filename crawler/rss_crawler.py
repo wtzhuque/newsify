@@ -60,6 +60,7 @@ class RSSCrawler(object):
                 continue
             
             if timestamp > cur_latest:
+                print 'timestamp:',timestamp, ' latest:', cur_latest
                 cur_latest = timestamp
 
             doc_attr = entry.keys()
@@ -111,15 +112,20 @@ def main():
     db = MiniDB(args.db)
     linkcache = LinkCache(config)
 
-    for rss in rss_list:
-        timestamp = linkcache.get_link_updatetime(rss)
-        doc_list, url_list = crawler.crawl(rss, timestamp)
-        for doc in doc_list:
-            db.set(str(uuid.uuid1()), doc)
-            if doc['timestamp'] > timestamp:
-                timestamp = doc['timestamp']
-        linkcache.set_link_updatetime(rss, doc['timestamp'])
-        logging.info('rss=[%s] doc_num=[%d] timestamp=[%d]' % (rss, len(doc_list), timestamp))
+    while True:
+        for rss in rss_list:
+            timestamp = linkcache.get_link_updatetime(rss)
+            doc_list, url_list = crawler.crawl(rss, timestamp)
+
+            for doc in doc_list:
+                db.set(str(uuid.uuid1()), doc)
+                if doc['timestamp'] > timestamp:
+                    timestamp = doc['timestamp']
+
+            linkcache.set_link_updatetime(rss, timestamp)
+            logging.info('rss=[%s] doc_num=[%d] timestamp=[%d]' % (rss, len(doc_list), timestamp))
+
+        time.sleep(300)
 
 
 if __name__ == "__main__":
