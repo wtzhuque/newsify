@@ -55,15 +55,17 @@ class RSSCrawler(object):
         
         cur_latest = latest_updatetime
         for entry in rss_doc.entries:
+            doc_attr = entry.keys()
+            if 'published_parsed' not in doc_attr:
+                continue
+
             timestamp = int(time.mktime(entry.published_parsed))
             if timestamp <= latest_updatetime:
                 continue
             
             if timestamp > cur_latest:
-                print 'timestamp:',timestamp, ' latest:', cur_latest
                 cur_latest = timestamp
 
-            doc_attr = entry.keys()
             doc = {}
            
             doc['link'] = rss 
@@ -115,15 +117,25 @@ def main():
     while True:
         for rss in rss_list:
             timestamp = linkcache.get_link_updatetime(rss)
-            doc_list, url_list = crawler.crawl(rss, timestamp)
+            try:
+                doc_list, url_list = crawler.crawl(rss, timestamp)
+            except Exception as e:
+                logging.warn('crawl error rss=[%s] err=[%s]' % (rss, str(e)))
+                continue
 
             for doc in doc_list:
                 db.set(str(uuid.uuid1()), doc)
-                if doc['timestamp'] > timestamp:
+                if timestamp:
+                    if doc['timestamp'] > timestamp:
+                        timestamp = doc['timestamp']
+                else:
                     timestamp = doc['timestamp']
-
-            linkcache.set_link_updatetime(rss, timestamp)
-            logging.info('rss=[%s] doc_num=[%d] timestamp=[%d]' % (rss, len(doc_list), timestamp))
+            
+            if timestamp:
+                linkcache.set_link_updatetime(rss, timestamp)
+                logging.info('rss=[%s] doc_num=[%d] timestamp=[%d]' % (rss, len(doc_list), timestamp))
+            else:
+                logging.info('rss=[%s] doc_num=[%d]' % (rss, len(doc_list)))
 
         time.sleep(300)
 

@@ -24,7 +24,8 @@ class LinkCache(object):
 
     def get_link_updatetime(self, link):
         time_str = self.__redis.get('%s_updatetime' % link)
-        if time_str:
+        if time_str is not None:
+            print 'time_str:', time_str
             return int(time_str)
         return None
 
