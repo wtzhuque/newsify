@@ -20,6 +20,33 @@ import logging
 import ConfigParser
 
 
+class MiniDB(tornado.web.Application):
+    """
+    Mini DB with rest api
+    """
+    def __init__(self, config):
+        handlers = [
+            (r'/get', GetHandler),
+            (r'/set', SetHandler)
+        ]
+
+
+class DBGetHandler(tornado.web.RequestHandler):
+    """
+    Handle get request of db
+    """
+    def get(self):
+        return
+
+
+class DBSetHandler(tornado.web.RequestHandler):
+    """
+    Handle set request of db
+    """
+    def post(self):
+        return
+
+
 def main():
     """
     Main entry
