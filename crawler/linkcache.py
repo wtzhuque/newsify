@@ -36,9 +36,11 @@ class LinkCache(object):
         """
         Get link attr
         """
+        self.__redis.get('%s_%s' % (link, attr))
 
     def set_link_attr(self, link, attr, val):
         """
         Set link attr
         """
+        self.__redis.set('%s_%s' % (link, attr), str(val))
        

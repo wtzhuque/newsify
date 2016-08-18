@@ -44,14 +44,18 @@ class DBGetHandler(tornado.web.RequestHandler):
 
     def get(self):
         keys = self.get_query_arguments('key')
-        res = {}
+        key_val = {}
         for key in keys:
             try:
                 val = json.loads(self.__db.Get(key))
-                res[key] = json.loads(val_str)
+                key_val[key] = json.loads(val_str)
             except Exception as e:
-                res[key] = None
+                key_val[key] = None
 
+        res = {}
+        res['error'] = 0
+        res['msg'] = 'ok'
+        res['result'] = key_val
         self.write(json.dumps(res))
         return
 
@@ -67,7 +71,21 @@ class DBSetHandler(tornado.web.RequestHandler):
         self.__db = db
 
     def post(self):
-        return
+        res = {}
+        try:
+            print 'request:', self.request.body
+            key_val = json.loads(self.request.body)
+            for (k, v) in key_val:
+                print 'key:', k, ' val:', v
+                self.__db.Put(k, json.dumps(v))
+            res['error'] = 0
+            res['msg'] = 'ok'
+        except Exception as e:
+            res['error'] = -1
+            res['msg'] = 'data error'
+        finally:
+            self.write(json.dumps(res))
+            return
 
 
 def main():
