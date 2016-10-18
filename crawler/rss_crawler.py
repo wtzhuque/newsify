@@ -24,7 +24,7 @@ logging.basicConfig(level=logging.INFO,
                     datefmt='%a, %d %b %Y %H:%M:%S')
 
 
-socket.setdefaulttimeout(12)
+socket.setdefaulttimeout(15)
 
 
 class RSSCrawler(object):
@@ -90,7 +90,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-s', '--rss', help = 'start pages')
     parser.add_argument('-d', '--db', default = './db', help = 'output db')
-    parser.add_argument('-c', '--config', default = './conf/config', help = 'config file')
+    parser.add_argument('-c', '--config', default = './conf/rss_config', help = 'config file')
     args = parser.parse_args()
     
     config = ConfigParser.ConfigParser()

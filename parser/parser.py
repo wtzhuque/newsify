@@ -10,6 +10,7 @@ Date: 2016/08/01 17:52:45
 import argparse
 import logging
 import leveldb
+import jieba
 import ConfigParser
 
 
@@ -21,7 +22,7 @@ class Parser(object):
         """
         Parse doc
         """
-
+        
 
 def main():
     """
@@ -37,10 +38,13 @@ def main():
         logging.warn('load config file [%s] failed' % args.config)
         return
 
-    data = leveldb.LevelDB(args.data)
-    for doc_key in data.RangeIter(include_value=False):
-        print 'doc=>', str(doc_key)
+    doc_parser = Parser()
 
+    data = leveldb.LevelDB(args.data)
+    for doc_key,doc in data.RangeIter(include_value=True):
+        print 'parsing doc =>', str(doc_key)
+        doc_parser.parse(doc);
+        
 
 
 if __name__ == "__main__":
